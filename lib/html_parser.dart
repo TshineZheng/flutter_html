@@ -472,10 +472,28 @@ class HtmlParser {
             ),
           );
         case "li":
+          String type = node.parent.localName; // Parent type; usually ol or ul
+          const EdgeInsets markPadding = EdgeInsets.symmetric(horizontal: 4.0);
+          Widget mark;
+          switch (type) {
+            case "ul":
+              mark = Container(child: Text('•'), padding: markPadding);
+              break;
+            case "ol":
+              int index = node.parent.children.indexOf(node) + 1;
+              mark = Container(child: Text("$index."), padding: markPadding);
+              break;
+            default: //Fallback to middle dot
+              mark = Container(width: 0.0, height: 0.0);
+              break;
+          }
           return Container(
             width: width,
             child: Wrap(
-              children: _parseNodeList(node.nodes),
+              children: <Widget>[
+                mark,
+                Wrap(children: _parseNodeList(node.nodes))
+              ],
             ),
           );
         case "main":
@@ -710,8 +728,11 @@ class HtmlParser {
       }
     } else if (node is dom.Text) {
       //We don't need to worry about rendering extra whitespace
-      if (node.text.trim() == "") {
-        return Container();
+      if (node.text.trim() == "" && node.text.indexOf(" ") == -1) {
+        return Wrap();
+      }
+      if (node.text.trim() == "" && node.text.indexOf(" ") != -1) {
+        node.text = " ";
       }
 
       print("Plain Text Node: '${trimStringHtml(node.text)}'");
@@ -724,7 +745,7 @@ class HtmlParser {
         return Text(finalText);
       }
     }
-    return Container();
+    return Wrap();
   }
 
   List<Widget> _parseNodeList(List<dom.Node> nodeList) {
